@@ -1,0 +1,12 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+coverage
+.turbo
+node_modules/.tmp
+*.log
+.env.local
+.vscode/*
+!.vscode/extensions.json

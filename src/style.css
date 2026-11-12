@@ -1,0 +1,65 @@
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  height: 100%;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
+#app {
+  height: 100%;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
+:root {
+  --color-bg: #0f1a0f;
+  --color-primary: #b43c3c;
+  --color-primary-light: rgba(180, 60, 60, 0.22);
+  --color-primary-hover: rgba(180, 60, 60, 0.45);
+  --color-accent: #e8b45a;
+  --color-glass: rgba(255, 255, 255, 0.06);
+  --color-glass-border: rgba(255, 255, 255, 0.14);
+  --color-text: rgba(255, 255, 255, 0.92);
+  --color-text-muted: rgba(255, 255, 255, 0.62);
+  --color-text-subtle: rgba(255, 255, 255, 0.42);
+  --font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-size-base: 16px;
+  --line-height: 1.5;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 16px;
+
+  font: var(--font-size-base) / var(--line-height) var(--font-family);
+  color-scheme: dark;
+  color: var(--color-text);
+  background: var(--color-bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Element Plus 暗色适配 */
+.el-button--primary {
+  --el-button-bg-color: var(--color-primary);
+  --el-button-border-color: var(--color-primary);
+  --el-button-hover-bg-color: #c94a4a;
+  --el-button-hover-border-color: #c94a4a;
+}
+
+.el-checkbox,
+.el-radio {
+  color: var(--color-text);
+}
+
+.el-textarea__inner,
+.el-input__wrapper {
+  background: rgba(0, 0, 0, 0.25) !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) inset !important;
+  color: var(--color-text) !important;
+}

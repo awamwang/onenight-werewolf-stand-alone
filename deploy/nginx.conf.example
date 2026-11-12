@@ -1,0 +1,26 @@
+# 示例：独立站点托管（大厅同域时优先用 awam-board-games 的 location /werewolf/）
+#   sudo cp deploy/nginx.conf.example /etc/nginx/conf.d/onenight-werewolf-stand-alone.conf
+
+server {
+    listen 80;
+    server_name _;
+
+    root /opt/code/onenight-werewolf-stand-alone/dist;
+    index index.html;
+
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    location ~* \.(js|css|png|svg|ico|woff2?|ttf|webmanifest)$ {
+        expires 7d;
+        add_header Cache-Control "public";
+        try_files $uri =404;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
