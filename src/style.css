@@ -212,6 +212,22 @@ body {
   transform: translateY(0);
 }
 
+/* 条件未满足时的禁用态：仍然可读，但明确不可点 */
+.el-button--primary.is-disabled,
+.el-button--primary.is-disabled:hover,
+.el-button--primary.is-disabled:focus,
+.el-button--primary.is-disabled:active {
+  --el-button-bg-color: rgba(233, 184, 114, 0.26);
+  --el-button-border-color: rgba(233, 184, 114, 0.26);
+  --el-button-text-color: rgba(42, 28, 8, 0.7);
+  --el-button-disabled-bg-color: rgba(233, 184, 114, 0.26);
+  --el-button-disabled-border-color: rgba(233, 184, 114, 0.26);
+  --el-button-disabled-text-color: rgba(42, 28, 8, 0.7);
+  box-shadow: none;
+  transform: none;
+  opacity: 0.8;
+}
+
 .el-input__wrapper,
 .el-textarea__inner {
   background: var(--color-input) !important;

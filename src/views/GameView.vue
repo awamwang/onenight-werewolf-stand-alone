@@ -47,14 +47,19 @@
           </div>
           <p class="guide">{{ store.curPlayer?.role.operateGuide }}</p>
 
-          <div
-            v-if="(store.curPlayer?.role.operateTargets.length ?? 0) > 0"
-            class="target-group"
-            role="group"
-            aria-labelledby="targets-title"
-          >
-            <p class="group-title" id="targets-title">选择操作目标</p>
-            <el-checkbox-group v-model="selectedTargets" class="targets">
+          <div v-if="需要选择目标" class="target-group" role="group" aria-labelledby="targets-title">
+            <div class="group-head">
+              <p class="group-title" id="targets-title">{{ 选择标题 }}</p>
+              <span class="select-count" role="status" aria-live="polite">{{ 选择进度 }}</span>
+            </div>
+            <p class="group-hint" id="targets-hint" role="status" aria-live="polite">
+              {{ 选择提示 }}
+            </p>
+            <el-checkbox-group
+              v-model="selectedTargets"
+              class="targets"
+              aria-describedby="targets-hint"
+            >
               <el-checkbox
                 v-for="target in store.curPlayer?.role.operateTargets || []"
                 :key="target"
@@ -67,7 +72,9 @@
           </div>
           <p v-else class="hint">无需选择目标，直接完成操作即可</p>
 
-          <el-button type="primary" class="full" @click="onFinishOperate1">完成操作</el-button>
+          <el-button type="primary" class="full" :disabled="!可提交" @click="onFinishOperate1">
+            完成操作
+          </el-button>
           <p v-if="error" class="error" role="alert">{{ error }}</p>
         </template>
 
@@ -161,12 +168,88 @@ const GameStatusEnum = store.GameStatusEnum
 const error = ref('')
 const voteTarget = ref<number | undefined>()
 
+const 角色名 = computed(() => store.curPlayer?.role.roleName ?? '')
+const 需要选择目标 = computed(() => (store.curPlayer?.role.operateTargets.length ?? 0) > 0)
+
+/** 底牌位编号大于玩家人数 */
+function 是底牌(target: number): boolean {
+  return target > store.game.playerCount
+}
+
+/** 选择规则前移到 UI：写入 store 前先按角色裁剪，避免提交时才由 core 报错 */
 const selectedTargets = computed({
   get: () => store.operateArgs,
   set: (value: number[]) => {
-    const max = maxSelectable()
-    store.operateArgs = value.slice(-max)
+    if (角色名.value === '预言家') {
+      // 预言家二选一：查验 1 名玩家，或查看 2 张底牌（两者互斥）
+      const 玩家 = value.filter((t) => !是底牌(t))
+      store.operateArgs =
+        玩家.length > 0 ? [玩家[玩家.length - 1]!] : value.filter(是底牌).slice(-2)
+      return
+    }
+    store.operateArgs = value.slice(-maxSelectable())
   },
+})
+
+const 选择标题 = computed(() => {
+  switch (角色名.value) {
+    case '预言家':
+      return '查验目标'
+    case '强盗':
+      return '抢夺目标'
+    case '捣蛋鬼':
+      return '交换目标'
+    case '酒鬼':
+      return '交换底牌'
+    default:
+      return '选择操作目标'
+  }
+})
+
+const 选择进度 = computed(() => {
+  const sel = store.operateArgs
+  if (角色名.value === '预言家') {
+    return sel.some((t) => !是底牌(t)) ? '1 / 1' : `${sel.filter(是底牌).length} / 2`
+  }
+  return `${sel.length} / ${maxSelectable()}`
+})
+
+const 选择提示 = computed(() => {
+  const sel = store.operateArgs
+  switch (角色名.value) {
+    case '预言家': {
+      const 玩家数 = sel.filter((t) => !是底牌(t)).length
+      const 底牌数 = sel.filter(是底牌).length
+      if (玩家数 === 1) return '已选 1 名玩家，直接完成操作即可'
+      if (底牌数 === 2) return '已选 2 张底牌，直接完成操作即可'
+      if (底牌数 === 1) return '已选 1 张底牌，需再选 1 张底牌'
+      return '二选一：查验 1 名玩家，或查看 2 张底牌（不能查验自己）'
+    }
+    case '捣蛋鬼':
+      return sel.length === 2
+        ? '已选 2 名玩家，可以交换'
+        : `需选 2 名玩家（不能选自己），当前 ${sel.length} 名`
+    case '强盗':
+      return sel.length === 1 ? '已选 1 名玩家，可以抢夺' : '选择 1 名玩家（不能选自己）'
+    case '酒鬼':
+      return sel.length === 1 ? '已选 1 张底牌，可以交换' : '选择 1 张底牌'
+    default:
+      return ''
+  }
+})
+
+/** 条件未满足时禁用主按钮，杜绝「选完点提交才报错」 */
+const 可提交 = computed(() => {
+  if (!需要选择目标.value) return true
+  const sel = store.operateArgs
+  switch (角色名.value) {
+    case '预言家':
+      return sel.some((t) => !是底牌(t)) || sel.filter(是底牌).length === 2
+    case '捣蛋鬼':
+      return sel.length === 2
+    default:
+      return sel.length === 1
+  }
 })
 
 const phaseLabel = computed(() => {
@@ -196,19 +279,27 @@ watch(
 )
 
 function maxSelectable(): number {
-  const name = store.curPlayer?.role.roleName
-  if (name === '捣蛋鬼') return 2
-  if (name === '预言家') return 2
+  const name = 角色名.value
+  if (name === '捣蛋鬼' || name === '预言家') return 2
   return 1
 }
 
 function isTargetDisabled(target: number): boolean {
-  const name = store.curPlayer?.role.roleName
+  const name = 角色名.value
   const selected = store.operateArgs
+  // 已选项始终可点，便于取消
   if (selected.includes(target)) return false
-  if (selected.length >= maxSelectable()) return true
+
+  if (name === '预言家') {
+    // 玩家模式：上限 1；底牌模式：上限 2，且不能再回选玩家、不能选自己
+    if (selected.some((t) => !是底牌(t))) return true
+    const 已选底牌 = selected.filter(是底牌).length
+    if (是底牌(target)) return 已选底牌 >= 2
+    return 已选底牌 > 0 || target === store.curPosition
+  }
+
   if ((name === '强盗' || name === '捣蛋鬼') && target === store.curPosition) return true
-  return false
+  return selected.length >= maxSelectable()
 }
 
 function targetLabel(target: number): string {
@@ -407,11 +498,37 @@ function onRestart() {
   gap: var(--space-3);
 }
 
+.group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
 .group-title {
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--font-size-caption);
   font-weight: 600;
+}
+
+.select-count {
+  flex: 0 0 auto;
+  padding: 2px 10px;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 999px;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-size: var(--font-size-caption);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.group-hint {
+  margin: calc(var(--space-2) * -1) 0 0;
+  color: var(--color-text-subtle);
+  font-size: var(--font-size-caption);
+  line-height: var(--line-height);
 }
 
 .targets {
