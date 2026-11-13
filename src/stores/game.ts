@@ -22,6 +22,8 @@ export const useGameStore = defineStore('game', () => {
   const operateStage = ref<OperateStage>('pass')
   const operateArgs = ref<number[]>([])
   const operateResult = ref('')
+  /** 第一轮每个玩家看到的完整结果文本，供第二轮按原样回看（不含换牌后的最新身份） */
+  const 上轮结果文本 = ref<Record<number, string>>({})
   const killResult = ref('')
 
   const status = computed(() => game.value.status)
@@ -92,6 +94,8 @@ export const useGameStore = defineStore('game', () => {
     operateResult.value = game.value.curPlayer.role.operate1(game.value.curPosition)(
       operateArgs.value,
     )
+    // 原样留档：第二轮只回看这一份文本，避免重新计算时暴露换牌后的身份
+    上轮结果文本.value[game.value.curPosition] = operateResult.value
     operateStage.value = 'result'
     touchGame()
   }
@@ -137,6 +141,7 @@ export const useGameStore = defineStore('game', () => {
     operateStage.value = 'pass'
     operateArgs.value = []
     operateResult.value = ''
+    上轮结果文本.value = {}
     killResult.value = ''
   }
 
@@ -152,6 +157,7 @@ export const useGameStore = defineStore('game', () => {
     operateStage,
     operateArgs,
     operateResult,
+    上轮结果文本,
     killResult,
     status,
     curPosition,

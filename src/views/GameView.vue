@@ -79,22 +79,41 @@
         </template>
 
         <template v-else-if="store.status === GameStatusEnum.OPERATE2 && store.operateStage === 'act'">
-          <p class="hint">第二轮夜行动已就绪，查看本轮结果。</p>
+          <p class="hint">{{ 第二轮提示 }}</p>
           <el-button type="primary" class="full" @click="onFinishOperate2">查看结果</el-button>
           <p v-if="error" class="error" role="alert">{{ error }}</p>
         </template>
 
         <template v-else-if="store.operateStage === 'result'">
-          <div class="result-text" role="status">{{ store.operateResult }}</div>
-          <p
-            v-if="store.status === GameStatusEnum.OPERATE2 && store.game.operateLog[store.curPosition]"
-            class="log"
-          >
-            上轮操作：{{ store.game.operateLog[store.curPosition].roleName }}，{{
-              store.game.operateLog[store.curPosition].operate
-            }}
-          </p>
-          <el-button type="primary" class="full" @click="onNext">下一位</el-button>
+          <div class="result-block">
+            <p class="result-label">{{ 结果标签 }}</p>
+            <div class="result-text" aria-live="polite">
+              <template v-if="有高亮信息">
+                <template v-for="(片段, index) in 结果片段" :key="index">
+                  <button
+                    v-if="片段.可点"
+                    type="button"
+                    class="result-token"
+                    :aria-label="`已读「${片段.文本}」，交给下一位`"
+                    @click="onNext"
+                  >
+                    {{ 片段.文本 }}
+                  </button>
+                  <span v-else>{{ 片段.文本 }}</span>
+                </template>
+              </template>
+              <button
+                v-else
+                type="button"
+                class="result-plain"
+                aria-label="已读结果，交给下一位"
+                @click="onNext"
+              >
+                {{ 本轮展示文本 }}
+              </button>
+            </div>
+            <p class="next-hint">{{ 继续提示 }}</p>
+          </div>
         </template>
       </section>
     </template>
@@ -251,6 +270,65 @@ const 可提交 = computed(() => {
       return sel.length === 1
   }
 })
+
+/** 只有这些角色需要第二轮知道换牌后的最新身份，其余角色一律回看第一轮结果 */
+const 需要最新信息的角色 = new Set(['失眠者'])
+const 需要最新信息 = computed(() => 需要最新信息的角色.has(角色名.value))
+const 是第二轮 = computed(() => store.status === GameStatusEnum.OPERATE2)
+
+const 上轮日志文本 = computed(() => {
+  const log = store.game.operateLog[store.curPosition]
+  return log ? `${log.roleName}，${log.operate}` : ''
+})
+
+/** 第二轮默认展示第一轮留档文本，绝不重新计算当前身份 */
+const 本轮展示文本 = computed(() => {
+  if (是第二轮.value && !需要最新信息.value) {
+    return store.上轮结果文本[store.curPosition] || 上轮日志文本.value || '上一轮没有额外信息'
+  }
+  return store.operateResult || '本轮没有额外信息'
+})
+
+const 结果标签 = computed(() => {
+  if (是第二轮.value) {
+    return 需要最新信息.value ? '本轮最新信息' : '上一轮操作结果 · 不含换牌后的最新身份'
+  }
+  return '本轮操作结果'
+})
+
+const 第二轮提示 = computed(() =>
+  需要最新信息.value
+    ? '失眠者可以确认自己当前（可能已被交换）的身份。'
+    : '多数角色无需重复查看，下面会原样展示你上一轮的操作结果。',
+)
+
+interface 结果片段 {
+  文本: string
+  可点: boolean
+}
+
+/** 把玩家号 / 底牌 / 角色名切成可点片段，让重要信息同时承担「继续」入口 */
+const 关键信息 = /(\d+(?:、\d+)*号(?:玩家|狼|同伴)?|底牌\d*|狼人|爪牙|预言家|强盗|捣蛋鬼|失眠者|酒鬼|村民|守卫|皮匠)/g
+const 结果片段 = computed<结果片段[]>(() => {
+  const text = 本轮展示文本.value
+  关键信息.lastIndex = 0
+  const 片段: 结果片段[] = []
+  let last = 0
+  for (const match of text.matchAll(关键信息)) {
+    const start = match.index ?? 0
+    if (start > last) 片段.push({ 文本: text.slice(last, start), 可点: false })
+    片段.push({ 文本: match[0], 可点: true })
+    last = start + match[0].length
+  }
+  if (last < text.length) 片段.push({ 文本: text.slice(last), 可点: false })
+  return 片段
+})
+const 有高亮信息 = computed(() => 结果片段.value.some((s) => s.可点))
+const 继续提示 = computed(() =>
+  有高亮信息.value
+    ? '点击上方高亮的信息，确认已读并交给下一位玩家'
+    : '本条结果没有可高亮的信息，点击结果文字继续',
+)
 
 const phaseLabel = computed(() => {
   switch (store.status) {
@@ -582,6 +660,72 @@ function onRestart() {
   color: var(--color-primary);
   font-size: var(--font-size-subtitle);
   font-weight: 600;
+  line-height: var(--line-height);
+}
+
+.result-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* 结果正文改回普通文本色，让高亮片段成为唯一焦点 */
+.result-block .result-text {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.result-label {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-caption);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.result-token {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-min);
+  margin: 0 2px;
+  padding: 0 8px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.3;
+  vertical-align: middle;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.result-token:hover {
+  background: var(--color-primary-soft);
+}
+
+.result-plain {
+  display: block;
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.result-plain:hover {
+  text-decoration: underline;
+}
+
+.next-hint {
+  margin: 0;
+  color: var(--color-text-subtle);
+  font-size: var(--font-size-caption);
   line-height: var(--line-height);
 }
 
