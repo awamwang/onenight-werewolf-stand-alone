@@ -15,6 +15,7 @@
 
       <div class="field" role="group" aria-labelledby="field-players">
         <span class="field-label" id="field-players">
+          <span aria-hidden="true">👥</span>
           游戏人数
           <small>3–9 人</small>
         </span>
@@ -30,6 +31,7 @@
 
       <div class="field" role="group" aria-labelledby="field-timeout">
         <span class="field-label" id="field-timeout">
+          <span aria-hidden="true">⏱️</span>
           操作提示秒数
           <small>5–120 秒</small>
         </span>
@@ -49,7 +51,10 @@
         aria-describedby="field-roles-hint"
       >
         <div class="field-head">
-          <span class="field-label" id="field-roles">角色牌组</span>
+          <span class="field-label" id="field-roles">
+            <span aria-hidden="true">🃏</span>
+            角色牌组
+          </span>
           <span class="count" :class="{ warn: !牌组有效 }" role="status">
             {{ 牌组进度 }}
           </span>
@@ -77,35 +82,45 @@
         </div>
 
         <div class="role-pool" role="group" aria-labelledby="pool-title">
-          <p class="group-title" id="pool-title">逐张调整（点击 − / +）</p>
-          <div class="role-chips">
+          <p class="group-title" id="pool-title">
+            <span aria-hidden="true">🃏</span>
+            逐张调整 · 点 − / + 决定每种角色放几张
+          </p>
+          <div class="role-cards">
             <div
-              v-for="role in 角色池"
-              :key="role"
-              class="role-chip"
-              :class="{ used: 角色张数(role) > 0 }"
+              v-for="资料 in 角色池"
+              :key="资料.名称"
+              class="role-card"
+              :class="{ used: 角色张数(资料.名称) > 0 }"
             >
-              <button
-                type="button"
-                class="chip-btn"
-                :disabled="角色张数(role) === 0"
-                :aria-label="`移除一张${role}，当前 ${角色张数(role)} 张`"
-                @click="增减角色(role, -1)"
-              >
-                −
-              </button>
-              <span class="chip-name">
-                {{ role }}<small v-if="角色张数(role) > 0">×{{ 角色张数(role) }}</small>
+              <span class="role-icon" aria-hidden="true">{{ 资料.图标 }}</span>
+              <span class="role-info">
+                <strong class="role-name">{{ 资料.名称 }}</strong>
+                <small class="role-desc">{{ 资料.一句话 }}</small>
               </span>
-              <button
-                type="button"
-                class="chip-btn"
-                :disabled="牌组数量 >= 需要张数"
-                :aria-label="`添加一张${role}，当前 ${角色张数(role)} 张`"
-                @click="增减角色(role, 1)"
-              >
-                +
-              </button>
+              <span class="role-actions">
+                <button
+                  type="button"
+                  class="chip-btn"
+                  :disabled="角色张数(资料.名称) === 0"
+                  :aria-label="`移除一张${资料.名称}，当前 ${角色张数(资料.名称)} 张`"
+                  @click="增减角色(资料.名称, -1)"
+                >
+                  −
+                </button>
+                <span class="role-count" :aria-label="`当前 ${角色张数(资料.名称)} 张`">
+                  {{ 角色张数(资料.名称) }}
+                </span>
+                <button
+                  type="button"
+                  class="chip-btn"
+                  :disabled="牌组数量 >= 需要张数"
+                  :aria-label="`添加一张${资料.名称}，当前 ${角色张数(资料.名称)} 张`"
+                  @click="增减角色(资料.名称, 1)"
+                >
+                  +
+                </button>
+              </span>
             </div>
           </div>
         </div>
@@ -134,6 +149,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { availableRoles, LEFT_ROLE_COUNT, type RoleName } from '@/core'
+import { 查找角色资料 } from '@/角色资料'
 import { useGameStore } from '@/stores/game'
 
 const store = useGameStore()
@@ -144,8 +160,10 @@ const error = ref('')
 const playerCount = ref(store.game.playerCount)
 const operateTimeout = ref(store.game.operateTimeout)
 
-/** 点击式配置的角色池，全部来自 core 的合法角色表 */
-const 角色池 = Object.keys(availableRoles) as RoleName[]
+/** 点击式配置的角色池：合法角色 + 图标 + 一句话描述 */
+const 角色池 = (Object.keys(availableRoles) as RoleName[]).map((名称) => ({
+  ...查找角色资料(名称),
+}))
 const 需要张数 = computed(() => playerCount.value + LEFT_ROLE_COUNT)
 const 牌组数组 = computed(() => store.rolesString.split(/[、,，\s]+/).filter(Boolean))
 const 牌组数量 = computed(() => 牌组数组.value.length)
@@ -499,48 +517,78 @@ function start() {
 }
 
 .group-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--font-size-caption);
   font-weight: 600;
 }
 
-.role-chips {
-  display: flex;
-  flex-wrap: wrap;
+.role-cards {
+  display: grid;
+  grid-template-columns: 1fr;
   gap: var(--space-2);
 }
 
-.role-chip {
-  display: inline-flex;
+.role-card {
+  display: flex;
   align-items: center;
-  gap: var(--space-1);
-  min-height: var(--tap-min);
-  padding: 0 2px;
+  gap: var(--space-2);
+  min-height: 64px;
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--color-line-strong);
   border-radius: var(--radius-sm);
   background: var(--color-surface-raised);
 }
 
-.role-chip.used {
+.role-card.used {
   border-color: var(--color-primary);
   background: var(--color-primary-light);
 }
 
-.chip-name {
-  min-width: 52px;
-  padding: 0 var(--space-1);
-  color: var(--color-text);
-  font-size: var(--font-size-label);
+.role-icon {
+  flex: 0 0 28px;
+  font-size: 1.5rem;
+  line-height: 1;
   text-align: center;
-  white-space: nowrap;
 }
 
-.chip-name small {
-  margin-left: 2px;
-  color: var(--color-primary);
+.role-info {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.role-name {
+  color: var(--color-text);
+  font-size: var(--font-size-label);
+  font-weight: 600;
+}
+
+.role-desc {
+  color: var(--color-text-subtle);
   font-size: var(--font-size-caption);
+  line-height: 1.4;
+}
+
+.role-actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+}
+
+.role-count {
+  min-width: 20px;
+  color: var(--color-primary);
+  font-size: var(--font-size-label);
   font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .chip-btn {
@@ -645,6 +693,10 @@ function start() {
 @media (min-width: 600px) {
   .preset-list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .role-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

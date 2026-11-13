@@ -7,6 +7,7 @@
       </button>
       <span class="phase" role="status" aria-live="polite">
         <span class="sr-only">当前阶段：</span>
+        <span aria-hidden="true">{{ 阶段图标 }}</span>
         {{ phaseLabel }}
       </span>
     </header>
@@ -14,11 +15,14 @@
     <!-- 规则说明 -->
     <section v-if="store.status === GameStatusEnum.RULE" class="card" aria-labelledby="step-title">
       <div class="card-head">
-        <p class="eyebrow">第 0 步 · 准备</p>
+        <p class="eyebrow"><span aria-hidden="true">📖</span> 第 0 步 · 准备</p>
         <h2 id="step-title">夜晚开始</h2>
       </div>
       <p class="rule">{{ store.game.rule }}</p>
-      <el-button type="primary" class="full" @click="store.confirmRule()">知道了</el-button>
+      <el-button type="primary" class="full" @click="store.confirmRule()">
+        <span aria-hidden="true">👍</span>
+        知道了
+      </el-button>
     </section>
 
     <!-- 操作一轮 / 二轮 -->
@@ -36,20 +40,34 @@
 
       <section v-else class="card" aria-labelledby="step-title">
         <div class="card-head">
-          <p class="eyebrow">{{ phaseLabel }}</p>
+          <p class="eyebrow"><span aria-hidden="true">{{ 阶段图标 }}</span> {{ phaseLabel }}</p>
           <h2 id="step-title">{{ store.curPosition }}号玩家操作</h2>
         </div>
 
         <template v-if="store.status === GameStatusEnum.OPERATE1 && store.operateStage === 'act'">
           <div class="identity">
+            <span class="identity-icon" aria-hidden="true">{{ 当前角色资料.图标 }}</span>
             <span class="identity-label">你的身份是</span>
-            <strong class="identity-name">{{ store.curPlayer?.role.roleName }}</strong>
+            <strong class="identity-name">{{ 当前角色资料.名称 }}</strong>
           </div>
-          <p class="guide">{{ store.curPlayer?.role.operateGuide }}</p>
+          <div class="ability">
+            <p class="ability-title">
+              <span aria-hidden="true">📖</span>
+              这个角色能做什么
+            </p>
+            <p class="ability-text">{{ 当前角色资料.能力 }}</p>
+          </div>
+          <p class="guide">
+            <span aria-hidden="true">💡</span>
+            本步提示：{{ store.curPlayer?.role.operateGuide }}
+          </p>
 
           <div v-if="需要选择目标" class="target-group" role="group" aria-labelledby="targets-title">
             <div class="group-head">
-              <p class="group-title" id="targets-title">{{ 选择标题 }}</p>
+              <p class="group-title" id="targets-title">
+                <span aria-hidden="true">🎯</span>
+                {{ 选择标题 }}
+              </p>
               <span class="select-count" role="status" aria-live="polite">{{ 选择进度 }}</span>
             </div>
             <p class="group-hint" id="targets-hint" role="status" aria-live="polite">
@@ -70,23 +88,30 @@
               </el-checkbox>
             </el-checkbox-group>
           </div>
-          <p v-else class="hint">无需选择目标，直接完成操作即可</p>
+          <p v-else class="hint"><span aria-hidden="true">✅</span> 无需选择目标，直接完成操作即可</p>
 
           <el-button type="primary" class="full" :disabled="!可提交" @click="onFinishOperate1">
+            <span aria-hidden="true">✔️</span>
             完成操作
           </el-button>
           <p v-if="error" class="error" role="alert">{{ error }}</p>
         </template>
 
         <template v-else-if="store.status === GameStatusEnum.OPERATE2 && store.operateStage === 'act'">
-          <p class="hint">{{ 第二轮提示 }}</p>
-          <el-button type="primary" class="full" @click="onFinishOperate2">查看结果</el-button>
+          <p class="hint"><span aria-hidden="true">{{ 第二轮图标 }}</span> {{ 第二轮提示 }}</p>
+          <el-button type="primary" class="full" @click="onFinishOperate2">
+            <span aria-hidden="true">🔎</span>
+            查看结果
+          </el-button>
           <p v-if="error" class="error" role="alert">{{ error }}</p>
         </template>
 
         <template v-else-if="store.operateStage === 'result'">
           <div class="result-block">
-            <p class="result-label">{{ 结果标签 }}</p>
+            <p class="result-label">
+              <span aria-hidden="true">{{ 结果图标 }}</span>
+              {{ 结果标签 }}
+            </p>
             <div class="result-text" aria-live="polite">
               <template v-if="有高亮信息">
                 <template v-for="(片段, index) in 结果片段" :key="index">
@@ -112,7 +137,7 @@
                 {{ 本轮展示文本 }}
               </button>
             </div>
-            <p class="next-hint">{{ 继续提示 }}</p>
+            <p class="next-hint"><span aria-hidden="true">👆</span> {{ 继续提示 }}</p>
           </div>
         </template>
       </section>
@@ -121,31 +146,34 @@
     <!-- 讨论投票 -->
     <section v-else-if="store.status === GameStatusEnum.ARGUE" class="card" aria-labelledby="step-title">
       <div class="card-head">
-        <p class="eyebrow">白天 · 讨论投票</p>
+        <p class="eyebrow"><span aria-hidden="true">🗳️</span> 白天 · 讨论投票</p>
         <h2 id="step-title">请开始你们的表演</h2>
       </div>
-      <p class="hint">讨论结束后，选择投票处决对象（可选底牌位）。</p>
+      <p class="hint"><span aria-hidden="true">💬</span> 讨论结束后，选择投票处决对象（可选底牌位）。</p>
       <div class="target-group" role="group" aria-labelledby="vote-title">
-        <p class="group-title" id="vote-title">投票处决对象</p>
+        <p class="group-title" id="vote-title"><span aria-hidden="true">🎯</span> 投票处决对象</p>
         <el-radio-group v-model="voteTarget" class="targets column">
           <el-radio v-for="target in store.game.getKillTargets()" :key="target" :value="target">
             {{ targetLabel(target) }}
           </el-radio>
         </el-radio-group>
       </div>
-      <el-button type="primary" class="full" @click="onVote">投票</el-button>
+      <el-button type="primary" class="full" @click="onVote">
+        <span aria-hidden="true">🗳️</span>
+        投票
+      </el-button>
       <p v-if="error" class="error" role="alert">{{ error }}</p>
     </section>
 
     <!-- 结果 -->
     <section v-else-if="store.status === GameStatusEnum.RESULT" class="card" aria-labelledby="step-title">
       <div class="card-head">
-        <p class="eyebrow">本局结束</p>
+        <p class="eyebrow"><span aria-hidden="true">🏁</span> 本局结束</p>
         <h2 id="step-title">游戏结束</h2>
       </div>
       <p class="result-text" role="status">{{ store.killResult }}</p>
 
-      <h3>最终身份</h3>
+      <h3><span aria-hidden="true">🃏</span> 最终身份</h3>
       <ul class="final-list">
         <li v-for="(player, key) in store.game.finalPlayers" :key="key">
           <span>{{ key }}号</span>
@@ -153,23 +181,29 @@
         </li>
       </ul>
 
-      <h3>操作日志</h3>
+      <h3><span aria-hidden="true">🧾</span> 操作日志</h3>
       <ol class="log-list">
         <li v-for="(log, key) in store.game.operateLog" :key="key">
           <span class="log-index">{{ key }}号</span>
           <span class="log-body">{{ log.roleName }}，{{ log.operate }}</span>
         </li>
       </ol>
-      <el-button type="primary" class="full" @click="onRestart">再来一局</el-button>
+      <el-button type="primary" class="full" @click="onRestart">
+        <span aria-hidden="true">🔁</span>
+        再来一局
+      </el-button>
     </section>
 
     <section v-else class="card" aria-labelledby="step-title">
       <div class="card-head">
-        <p class="eyebrow">状态异常</p>
+        <p class="eyebrow"><span aria-hidden="true">⚠️</span> 状态异常</p>
         <h2 id="step-title">对局需要重来</h2>
       </div>
-      <p class="hint">当前对局状态无法继续，返回配置页重新开局即可。</p>
-      <el-button type="primary" class="full" @click="onRestart">返回配置</el-button>
+      <p class="hint"><span aria-hidden="true">ℹ️</span> 当前对局状态无法继续，返回配置页重新开局即可。</p>
+      <el-button type="primary" class="full" @click="onRestart">
+        <span aria-hidden="true">🔁</span>
+        返回配置
+      </el-button>
     </section>
   </main>
 </template>
@@ -179,6 +213,7 @@ import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import PassPhoneOverlay from '@/components/PassPhoneOverlay.vue'
 import { LEFT_ROLE_COUNT } from '@/core'
+import { 查找角色资料 } from '@/角色资料'
 import { useGameStore } from '@/stores/game'
 
 const store = useGameStore()
@@ -329,6 +364,27 @@ const 继续提示 = computed(() =>
     ? '点击上方高亮的信息，确认已读并交给下一位玩家'
     : '本条结果没有可高亮的信息，点击结果文字继续',
 )
+
+/** 新手向能力说明与阶段图标，全部取自共享角色图鉴 */
+const 当前角色资料 = computed(() => 查找角色资料(角色名.value))
+const 阶段图标 = computed(() => {
+  switch (store.status) {
+    case GameStatusEnum.RULE:
+      return '📖'
+    case GameStatusEnum.OPERATE1:
+      return '🌙'
+    case GameStatusEnum.OPERATE2:
+      return '🌗'
+    case GameStatusEnum.ARGUE:
+      return '🗣️'
+    case GameStatusEnum.RESULT:
+      return '🏁'
+    default:
+      return '🎲'
+  }
+})
+const 结果图标 = computed(() => (是第二轮.value ? (需要最新信息.value ? '🔎' : '↩️') : '✨'))
+const 第二轮图标 = computed(() => (需要最新信息.value ? '🔎' : '↩️'))
 
 const phaseLabel = computed(() => {
   switch (store.status) {
@@ -551,23 +607,55 @@ function onRestart() {
 .identity {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-3);
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-3) var(--space-4);
   border: 1px solid var(--color-primary);
   border-radius: var(--radius-md);
   background: var(--color-primary-light);
 }
 
+.identity-icon {
+  flex: 0 0 auto;
+  font-size: 2rem;
+  line-height: 1;
+}
+
 .identity-label {
+  flex: 0 0 auto;
   color: var(--color-text-muted);
   font-size: var(--font-size-label);
 }
 
 .identity-name {
+  margin-left: auto;
   color: var(--color-primary);
   font-size: var(--font-size-subtitle);
   font-weight: 700;
+}
+
+.ability {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-line);
+  border-left: 3px solid var(--color-primary);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--color-surface-raised);
+}
+
+.ability-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-1);
+  color: var(--color-primary);
+  font-size: var(--font-size-caption);
+  font-weight: 600;
+}
+
+.ability-text {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-label);
+  line-height: var(--line-height);
 }
 
 .target-group {

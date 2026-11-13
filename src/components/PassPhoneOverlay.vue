@@ -9,7 +9,7 @@
   >
     <div class="content">
       <div class="pass-top">
-        <p class="eyebrow">隐私交接</p>
+        <p class="eyebrow"><span aria-hidden="true">🤫</span> 隐私交接</p>
         <h2 class="title" id="pass-title">请将手机传给</h2>
         <p class="player-name">{{ playerName }}</p>
         <p class="privacy-hint" id="pass-hint">
