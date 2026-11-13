@@ -1,10 +1,12 @@
 <template>
   <main id="主内容" tabindex="-1" class="home" aria-labelledby="home-title">
     <header class="hero">
-      <p class="eyebrow"><span class="moon" aria-hidden="true"></span>单机 · 传手机</p>
+      <div class="hero-top">
+        <p class="eyebrow"><span class="moon" aria-hidden="true"></span>单机 · 传手机</p>
+        <p class="meta"><span aria-hidden="true">🌙</span> 一夜定胜负 · 3–9 人</p>
+      </div>
       <h1 id="home-title">一夜狼人杀</h1>
       <p class="sub">配置人数与牌组，轮流传递手机完成夜行动，再集体讨论投票</p>
-      <p class="meta"><span aria-hidden="true">🌙</span> 一夜定胜负 · 3–9 人 · 含 3 张底牌</p>
     </header>
 
     <section class="panel" aria-labelledby="config-title">
@@ -13,35 +15,37 @@
         <p>设置会保存在本机，下次自动带入</p>
       </div>
 
-      <div class="field" role="group" aria-labelledby="field-players">
-        <span class="field-label" id="field-players">
-          <span aria-hidden="true">👥</span>
-          游戏人数
-          <small>3–9 人</small>
-        </span>
-        <el-input-number
-          v-model="playerCount"
-          :min="3"
-          :max="9"
-          controls-position="right"
-          aria-labelledby="field-players"
-          @change="onPlayerCountChange"
-        />
-      </div>
+      <div class="field-row">
+        <div class="field" role="group" aria-labelledby="field-players">
+          <span class="field-label" id="field-players">
+            <span aria-hidden="true">👥</span>
+            游戏人数
+            <small>3–9 人</small>
+          </span>
+          <el-input-number
+            v-model="playerCount"
+            :min="3"
+            :max="9"
+            controls-position="right"
+            aria-labelledby="field-players"
+            @change="onPlayerCountChange"
+          />
+        </div>
 
-      <div class="field" role="group" aria-labelledby="field-timeout">
-        <span class="field-label" id="field-timeout">
-          <span aria-hidden="true">⏱️</span>
-          操作提示秒数
-          <small>5–120 秒</small>
-        </span>
-        <el-input-number
-          v-model="operateTimeout"
-          :min="5"
-          :max="120"
-          controls-position="right"
-          aria-labelledby="field-timeout"
-        />
+        <div class="field" role="group" aria-labelledby="field-timeout">
+          <span class="field-label" id="field-timeout">
+            <span aria-hidden="true">⏱️</span>
+            提示秒数
+            <small>5–120 秒</small>
+          </span>
+          <el-input-number
+            v-model="operateTimeout"
+            :min="5"
+            :max="120"
+            controls-position="right"
+            aria-labelledby="field-timeout"
+          />
+        </div>
       </div>
 
       <div
@@ -68,6 +72,7 @@
             class="preset"
             :class="{ active: 当前预设 === preset.id }"
             :aria-pressed="当前预设 === preset.id"
+            :aria-label="`${preset.名称}：${preset.描述}`"
             @click="应用预设(preset.id)"
           >
             <span class="preset-icon" aria-hidden="true">{{ preset.icon }}</span>
@@ -75,16 +80,35 @@
               <strong>{{ preset.名称 }}</strong>
               <small>{{ preset.描述 }}</small>
             </span>
-            <span class="preset-check" aria-hidden="true">
-              {{ 当前预设 === preset.id ? '✓' : '' }}
-            </span>
+            <span class="preset-check" aria-hidden="true">✓</span>
           </button>
         </div>
 
-        <div class="role-pool" role="group" aria-labelledby="pool-title">
+        <button
+          type="button"
+          class="advanced-toggle"
+          :aria-expanded="展开逐张调整"
+          aria-controls="role-pool"
+          @click="展开逐张调整 = !展开逐张调整"
+        >
+          <span class="advanced-icon" aria-hidden="true">⚙</span>
+          <span class="advanced-label">
+            逐张调整牌组
+            <small>{{ 展开逐张调整 ? '点这里收起' : `${角色池.length} 种角色可选` }}</small>
+          </span>
+          <span class="chevron" :class="{ open: 展开逐张调整 }" aria-hidden="true">⌄</span>
+        </button>
+
+        <div
+          v-show="展开逐张调整"
+          id="role-pool"
+          class="role-pool"
+          role="group"
+          aria-labelledby="pool-title"
+        >
           <p class="group-title" id="pool-title">
             <span aria-hidden="true">🃏</span>
-            逐张调整 · 点 − / + 决定每种角色放几张
+            点 − / + 决定每种角色放几张
           </p>
           <div class="role-cards">
             <div
@@ -127,7 +151,9 @@
 
         <p class="field-hint" id="field-roles-hint">{{ 牌组提示 }}</p>
       </div>
+    </section>
 
+    <footer class="action-bar">
       <el-button type="primary" class="primary-btn" :disabled="!牌组有效" @click="start">
         <span aria-hidden="true">▶</span>
         开始游戏
@@ -136,12 +162,11 @@
         <span aria-hidden="true">!</span>
         {{ error }}
       </p>
-    </section>
-
-    <a v-if="lobbyUrl" class="btn-lobby" :href="lobbyUrl">
-      <span aria-hidden="true">←</span>
-      返回游戏大厅
-    </a>
+      <a v-if="lobbyUrl" class="btn-lobby" :href="lobbyUrl">
+        <span aria-hidden="true">←</span>
+        返回游戏大厅
+      </a>
+    </footer>
   </main>
 </template>
 
@@ -239,6 +264,16 @@ watch(当前预设, (v) => {
   选中预设.value = v
 })
 
+/** 逐张调整默认收起，让首屏一屏放得下；自定义牌组、或牌组张数不齐时自动展开 */
+const 展开逐张调整 = ref(当前预设.value === '自定义')
+watch(
+  牌组有效,
+  (ok) => {
+    if (!ok) 展开逐张调整.value = true
+  },
+  { immediate: true },
+)
+
 function 角色张数(role: string): number {
   return 牌组数组.value.filter((r) => r === role).length
 }
@@ -304,15 +339,25 @@ function start() {
   margin-inline: auto;
   overflow: auto;
   overscroll-behavior: contain;
-  padding: var(--space-8) var(--space-5)
-    calc(var(--space-12) + env(safe-area-inset-bottom, 0px));
+  padding: var(--space-4) var(--space-5) 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-4);
 }
 
 .hero {
-  padding-top: var(--space-2);
+  padding-top: var(--space-1);
+}
+
+.hero-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.hero-top p {
+  margin: 0;
 }
 
 .eyebrow {
@@ -339,15 +384,17 @@ function start() {
 }
 
 .hero h1 {
-  margin: var(--space-4) 0 var(--space-2);
-  font-size: var(--font-size-display);
+  margin: var(--space-2) 0 0;
+  font-size: 1.625rem;
   line-height: var(--line-height-tight);
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--color-text);
 }
 
+/* 小屏首屏优先保证「配置 + 开始」可见，玩法说明交给对局页 */
 .sub {
+  display: none;
   margin: 0;
   max-width: 40ch;
   color: var(--color-text-muted);
@@ -355,7 +402,7 @@ function start() {
 }
 
 .meta {
-  margin: var(--space-3) 0 0;
+  margin: 0;
   color: var(--color-text-subtle);
   font-size: var(--font-size-caption);
 }
@@ -363,8 +410,8 @@ function start() {
 .panel {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-  padding: var(--space-6) var(--space-5);
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-4);
   border-radius: var(--radius-xl);
   background:
     linear-gradient(180deg, rgba(233, 184, 114, 0.045), transparent 120px),
@@ -397,6 +444,21 @@ function start() {
   color: var(--color-text);
 }
 
+/* 人数与秒数并排一行，label 在上、控件在下，省掉一整行高度 */
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.field-row .field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
+  padding-bottom: var(--space-3);
+}
+
 .field.block {
   display: flex;
   flex-direction: column;
@@ -425,6 +487,7 @@ function start() {
 }
 
 .field-label small {
+  display: none;
   font-size: var(--font-size-caption);
   font-weight: 400;
   color: var(--color-text-subtle);
@@ -441,23 +504,27 @@ function start() {
   color: var(--color-primary);
 }
 
+/* 三套预设压成一行 chips：图标 + 名称，描述交给 aria-label 与宽屏 */
 .preset-list {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-2);
 }
 
 .preset {
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--space-3);
-  min-height: 64px;
-  padding: var(--space-3);
+  justify-content: center;
+  gap: 2px;
+  min-height: 60px;
+  padding: var(--space-2) var(--space-1);
   border: 1px solid var(--color-line-strong);
   border-radius: var(--radius-sm);
   background: var(--color-surface-raised);
   color: var(--color-text);
-  text-align: left;
+  text-align: center;
   cursor: pointer;
   transition:
     border-color var(--duration-fast) var(--ease-out),
@@ -474,40 +541,102 @@ function start() {
 }
 
 .preset-icon {
-  flex: 0 0 auto;
   font-size: 1.25rem;
   line-height: 1;
 }
 
 .preset-body {
   display: flex;
-  flex: 1 1 auto;
   min-width: 0;
   flex-direction: column;
-  gap: 2px;
+  align-items: center;
 }
 
 .preset-body strong {
-  font-size: var(--font-size-label);
+  font-size: var(--font-size-caption);
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .preset-body small {
+  display: none;
   color: var(--color-text-subtle);
   font-size: var(--font-size-caption);
   line-height: 1.4;
 }
 
-.preset.active .preset-body strong,
-.preset.active .preset-check {
+.preset.active .preset-body strong {
   color: var(--color-primary);
 }
 
 .preset-check {
-  flex: 0 0 16px;
+  position: absolute;
+  top: 2px;
+  right: 5px;
   color: var(--color-primary);
+  font-size: 0.75rem;
   font-weight: 700;
-  text-align: center;
+  line-height: 1;
+  opacity: 0;
+}
+
+.preset.active .preset-check {
+  opacity: 1;
+}
+
+/* 高级入口：折叠逐张调整，首屏只留这一行 */
+.advanced-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--tap-min);
+  padding: 0 var(--space-3);
+  border: 1px dashed var(--color-line-strong);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.advanced-toggle:hover {
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.advanced-icon {
+  flex: 0 0 auto;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.advanced-label {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--font-size-label);
+  font-weight: 600;
+}
+
+.advanced-label small {
+  color: var(--color-text-subtle);
+  font-size: var(--font-size-caption);
+  font-weight: 400;
+}
+
+.chevron {
+  flex: 0 0 auto;
+  font-size: 1.125rem;
+  line-height: 1;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.chevron.open {
+  transform: rotate(180deg);
 }
 
 .role-pool {
@@ -529,15 +658,16 @@ function start() {
 .role-cards {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--space-2);
+  gap: 6px;
 }
 
+/* 展开后的角色行压缩到单行：图标 + 名称 + 加减，描述留给宽屏 */
 .role-card {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: 64px;
-  padding: var(--space-2) var(--space-3);
+  min-height: var(--tap-min);
+  padding: 0 var(--space-2);
   border: 1px solid var(--color-line-strong);
   border-radius: var(--radius-sm);
   background: var(--color-surface-raised);
@@ -549,8 +679,8 @@ function start() {
 }
 
 .role-icon {
-  flex: 0 0 28px;
-  font-size: 1.5rem;
+  flex: 0 0 24px;
+  font-size: 1.25rem;
   line-height: 1;
   text-align: center;
 }
@@ -570,6 +700,7 @@ function start() {
 }
 
 .role-desc {
+  display: none;
   color: var(--color-text-subtle);
   font-size: var(--font-size-caption);
   line-height: 1.4;
@@ -625,8 +756,23 @@ function start() {
 }
 
 .field :deep(.el-input-number) {
-  width: 152px;
+  width: 100%;
+  max-width: 200px;
   min-height: var(--tap-min);
+}
+
+/* 吸底操作区：即使展开逐张调整，开始按钮也始终留在视口底部 */
+.action-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
+  margin-top: auto;
+  padding: var(--space-3) 0 calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(180deg, transparent, var(--color-bg) 28%);
 }
 
 .primary-btn {
@@ -670,56 +816,104 @@ function start() {
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  min-height: var(--tap-min);
-  padding: 0 var(--space-5);
-  border: 1px solid var(--color-line-strong);
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: none;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--color-text-muted);
+  color: var(--color-text-subtle);
   text-decoration: none;
-  font-size: var(--font-size-label);
-  transition:
-    color var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out),
-    background-color var(--duration-fast) var(--ease-out);
+  font-size: var(--font-size-caption);
+  transition: color var(--duration-fast) var(--ease-out);
 }
 
 .btn-lobby:hover {
   color: var(--color-primary);
-  border-color: var(--color-primary);
-  background: var(--color-primary-light);
 }
 
+/* 宽屏恢复完整信息密度，折叠入口依旧保留 */
 @media (min-width: 600px) {
-  .preset-list {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .home {
+    gap: var(--space-6);
+    padding-top: var(--space-8);
+  }
+
+  .hero h1 {
+    font-size: var(--font-size-display);
+  }
+
+  .sub {
+    display: block;
+    margin-top: var(--space-2);
+  }
+
+  .field-label small {
+    display: inline;
+  }
+
+  .preset {
+    min-height: 76px;
+    padding: var(--space-3);
+  }
+
+  .preset-body strong {
+    font-size: var(--font-size-label);
+  }
+
+  .preset-body small {
+    display: block;
+  }
+
+  .role-card {
+    min-height: 64px;
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .role-icon {
+    flex-basis: 28px;
+    font-size: 1.5rem;
+  }
+
+  .role-desc {
+    display: block;
   }
 
   .role-cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+
+  .btn-lobby {
+    min-height: var(--tap-min);
+    font-size: var(--font-size-label);
   }
 }
 
 @media (max-width: 380px) {
   .home {
     padding-inline: var(--space-4);
-    gap: var(--space-5);
+    gap: var(--space-3);
   }
 
   .hero h1 {
-    font-size: 1.875rem;
+    font-size: 1.5rem;
   }
 
   .panel {
-    padding: var(--space-5) var(--space-4);
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-3);
   }
 
-  .field {
-    column-gap: var(--space-2);
+  .field-row {
+    gap: var(--space-2);
   }
 
-  .preset-body small {
-    font-size: 0.75rem;
+  .field.block {
+    gap: var(--space-2);
+  }
+
+  .advanced-label {
+    gap: var(--space-1);
   }
 }
 </style>
