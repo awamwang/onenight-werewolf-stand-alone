@@ -1,4 +1,5 @@
 <template>
+  <a class="skip-link" href="#主内容">跳到主内容</a>
   <router-view class="app-shell" />
 </template>
 
@@ -12,5 +13,6 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  overscroll-behavior: contain;
 }
 </style>

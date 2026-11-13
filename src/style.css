@@ -1,38 +1,110 @@
-html {
-  height: 100%;
-  overflow: hidden;
-}
-
-body {
-  margin: 0;
-  height: 100%;
-  max-height: 100dvh;
-  overflow: hidden;
-}
-
-#app {
-  height: 100%;
-  max-height: 100dvh;
-  overflow: hidden;
-}
+/*
+ * 设计方向：月夜牌桌，一盏琥珀油灯
+ * 与 AWAM 大厅「深夜牌桌，一盏绿呢台灯」共用同一套方法论：
+ * 深色三层材质 + 单一光源焦点色 + 统一语义色 + 统一焦点环 + 44px 触控目标 + reduced-motion。
+ * 差异：焦点色是月光琥珀，材质偏墨绿以保留狼人杀的品类识别；
+ * 血红不再是主色，只作为「狼人 / 危险」语义色，避免双光源打架。
+ */
 
 :root {
-  --color-bg: #0f1a0f;
-  --color-primary: #b43c3c;
-  --color-primary-light: rgba(180, 60, 60, 0.22);
-  --color-primary-hover: rgba(180, 60, 60, 0.45);
-  --color-accent: #e8b45a;
-  --color-glass: rgba(255, 255, 255, 0.06);
-  --color-glass-border: rgba(255, 255, 255, 0.14);
-  --color-text: rgba(255, 255, 255, 0.92);
-  --color-text-muted: rgba(255, 255, 255, 0.62);
-  --color-text-subtle: rgba(255, 255, 255, 0.42);
+  /* 材质三层（由深到浅） */
+  --color-bg: #0b1410;
+  --color-surface: #121e17;
+  --color-surface-raised: #1a2a20;
+  --color-input: #0f1a14;
+
+  /* 描边两级 + 控件描边 */
+  --color-line: #26382c;
+  --color-line-strong: #3a5240;
+  --color-line-control: #5b7260;
+
+  /* 文本三级（对 --color-surface 对比度均 >= 4.5:1） */
+  --color-text: #eef5ef;
+  --color-text-muted: #a8bcae;
+  --color-text-subtle: #7c9584;
+
+  /* 唯一光源：月光琥珀 */
+  --color-primary: #e9b872;
+  --color-primary-hover: #f4cb8e;
+  --color-primary-ink: #2a1c08;
+  --color-primary-light: rgba(233, 184, 114, 0.14);
+  --color-primary-soft: rgba(233, 184, 114, 0.24);
+
+  /* 语义色：与 AWAM 大厅完全一致，跨站语义不漂移 */
+  --color-danger: #f43f5e;
+  --color-danger-text: #fda4af;
+  --color-success: #34d399;
+  --color-warning: #f59e0b;
+  --color-info: #38bdf8;
+
+  /* 兼容旧引用：收编为同一光源，消除「血红 + 琥珀」双主色 */
+  --color-accent: var(--color-primary);
+  --color-glass: var(--color-surface);
+  --color-glass-border: var(--color-line);
+
+  /* 字号阶梯 */
   --font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  --font-size-base: 16px;
-  --line-height: 1.5;
+  --font-size-display: 2.125rem;
+  --font-size-title: 1.375rem;
+  --font-size-subtitle: 1.125rem;
+  --font-size-base: 1rem;
+  --font-size-label: 0.9375rem;
+  --font-size-caption: 0.8125rem;
+  --line-height: 1.65;
+  --line-height-tight: 1.25;
+
+  /* 间距阶梯 */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* 形状、层级与动效 */
   --radius-sm: 8px;
-  --radius-md: 14px;
+  --radius-md: 12px;
   --radius-lg: 16px;
+  --radius-xl: 20px;
+  --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.34);
+  --shadow-glow: 0 8px 24px rgba(233, 184, 114, 0.16);
+  --focus-ring: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-primary);
+  --tap-min: 44px;
+  --duration-fast: 140ms;
+  --duration-base: 220ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* Element Plus 暗色收编 */
+  --el-color-primary: var(--color-primary);
+  --el-color-primary-light-3: #f1c990;
+  --el-color-primary-light-5: #e7b36c;
+  --el-color-primary-light-7: #6b5533;
+  --el-color-primary-light-8: #4a3b24;
+  --el-color-primary-light-9: #2a2216;
+  --el-color-primary-dark-2: var(--color-primary-hover);
+  --el-color-success: var(--color-success);
+  --el-color-danger: var(--color-danger);
+  --el-color-warning: var(--color-warning);
+  --el-bg-color: var(--color-surface);
+  --el-bg-color-page: var(--color-bg);
+  --el-bg-color-overlay: var(--color-surface-raised);
+  --el-fill-color-blank: var(--color-input);
+  --el-fill-color-light: var(--color-surface-raised);
+  --el-fill-color: var(--color-surface-raised);
+  --el-text-color-primary: var(--color-text);
+  --el-text-color-regular: var(--color-text-muted);
+  --el-text-color-secondary: var(--color-text-subtle);
+  --el-text-color-placeholder: var(--color-text-subtle);
+  --el-border-color: var(--color-line-strong);
+  --el-border-color-light: var(--color-line);
+  --el-border-color-lighter: var(--color-line);
+  --el-border-radius-base: var(--radius-sm);
+  --el-border-radius-small: 6px;
+  --el-disabled-bg-color: #16231a;
+  --el-disabled-text-color: #6c8272;
 
   font: var(--font-size-base) / var(--line-height) var(--font-family);
   color-scheme: dark;
@@ -44,22 +116,193 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Element Plus 暗色适配 */
+html {
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+body {
+  margin: 0;
+  height: 100%;
+  max-height: 100dvh;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% -12%, rgba(233, 184, 114, 0.09), transparent 58%),
+    var(--color-bg);
+}
+
+#app {
+  height: 100%;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
+/* 全站统一焦点环：键盘可见、鼠标不打扰 */
+:where(a, button, [role='button'], input, textarea, select, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 跳过导航：键盘用户直达主内容 */
+.skip-link {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  z-index: 200;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-min);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: var(--color-primary-ink);
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+/* ---------- Element Plus 组件收编 ---------- */
+.el-button {
+  min-height: var(--tap-min);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
 .el-button--primary {
   --el-button-bg-color: var(--color-primary);
   --el-button-border-color: var(--color-primary);
-  --el-button-hover-bg-color: #c94a4a;
-  --el-button-hover-border-color: #c94a4a;
+  --el-button-text-color: var(--color-primary-ink);
+  --el-button-hover-bg-color: var(--color-primary-hover);
+  --el-button-hover-border-color: var(--color-primary-hover);
+  --el-button-hover-text-color: var(--color-primary-ink);
+  --el-button-active-bg-color: var(--color-primary-hover);
+  --el-button-active-text-color: var(--color-primary-ink);
+  --el-button-disabled-text-color: #6c8272;
+  box-shadow: var(--shadow-glow);
+}
+
+.el-button--primary:hover {
+  transform: translateY(-1px);
+}
+
+.el-button--primary:active {
+  transform: translateY(0);
+}
+
+.el-input__wrapper,
+.el-textarea__inner {
+  background: var(--color-input) !important;
+  box-shadow: 0 0 0 1px var(--color-line-strong) inset !important;
+  color: var(--color-text) !important;
+  border-radius: var(--radius-sm) !important;
+  transition: box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.el-input__wrapper:hover,
+.el-textarea__inner:hover {
+  box-shadow: 0 0 0 1px var(--color-line-control) inset !important;
+}
+
+.el-input__wrapper.is-focus,
+.el-textarea__inner:focus {
+  box-shadow: 0 0 0 2px var(--color-primary) inset !important;
+}
+
+.el-input__inner,
+.el-textarea__inner {
+  color: var(--color-text);
+  font-size: var(--font-size-label);
+}
+
+.el-input-number .el-input__wrapper {
+  min-height: var(--tap-min);
+}
+
+.el-input-number__increase,
+.el-input-number__decrease {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  border-color: var(--color-line);
+}
+
+.el-input-number__increase:hover,
+.el-input-number__decrease:hover {
+  color: var(--color-primary);
 }
 
 .el-checkbox,
 .el-radio {
   color: var(--color-text);
+  min-height: var(--tap-min);
+  margin-right: 0;
 }
 
-.el-textarea__inner,
-.el-input__wrapper {
-  background: rgba(0, 0, 0, 0.25) !important;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) inset !important;
-  color: var(--color-text) !important;
+.el-checkbox__label,
+.el-radio__label {
+  color: var(--color-text);
+  font-size: var(--font-size-label);
+}
+
+.el-checkbox__inner,
+.el-radio__inner {
+  background: var(--color-input);
+  border-color: var(--color-line-control);
+}
+
+.el-checkbox__input.is-checked .el-checkbox__inner,
+.el-radio__input.is-checked .el-radio__inner {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.el-checkbox__input.is-checked + .el-checkbox__label,
+.el-radio__input.is-checked + .el-radio__label {
+  color: var(--color-primary);
+}
+
+.el-checkbox__inner::after {
+  border-color: var(--color-primary-ink);
+}
+
+.el-radio__inner::after {
+  background: var(--color-primary-ink);
+}
+
+.el-checkbox__input.is-disabled + .el-checkbox__label,
+.el-radio__input.is-disabled + .el-radio__label {
+  color: var(--color-text-subtle);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
