@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, triggerRef } from 'vue'
 import { DEFAULT_OPERATE_TIMEOUT, DEFAULT_PLAYER_COUNT, STORAGE_KEYS } from '@/config'
-import { Game, GameStatusEnum } from '@/core'
+import { Game, GameStatusEnum, LEFT_ROLE_COUNT } from '@/core'
 
 export type OperateStage = 'pass' | 'act' | 'result'
 
@@ -28,6 +28,22 @@ export const useGameStore = defineStore('game', () => {
   const curPosition = computed(() => game.value.curPosition)
   const curPlayer = computed(() => game.value.curPlayer)
 
+  /** Game 为 class 实例，shallowRef 不会追踪内部字段变更，变更后需手动触发 */
+  function touchGame(): void {
+    triggerRef(game)
+  }
+
+  function rolesCount(): number {
+    return rolesString.value.split('、').filter(Boolean).length
+  }
+
+  function syncRolesToPlayerCount(): void {
+    const expected = game.value.playerCount + LEFT_ROLE_COUNT
+    if (rolesCount() !== expected && game.value.defaultRoleNames.length) {
+      rolesString.value = game.value.defaultRoleNames.join('、')
+    }
+  }
+
   function syncDefaultRoles(): void {
     if (!rolesString.value && game.value.defaultRoleNames.length) {
       rolesString.value = game.value.defaultRoleNames.join('、')
@@ -36,9 +52,13 @@ export const useGameStore = defineStore('game', () => {
 
   function setPlayerCount(value: number): void {
     game.value.playerCount = value
-    if (!localStorage.getItem(STORAGE_KEYS.rolesString)) {
-      rolesString.value = game.value.defaultRoleNames.join('、')
-    }
+    syncRolesToPlayerCount()
+    touchGame()
+  }
+
+  function setOperateTimeout(value: number): void {
+    game.value.operateTimeout = value
+    touchGame()
   }
 
   function saveConfig(): void {
@@ -48,9 +68,11 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function confirmConfig(): void {
+    syncRolesToPlayerCount()
     game.value.setRoleNames(rolesString.value)
     game.value.startRuleShow()
     saveConfig()
+    touchGame()
   }
 
   function confirmRule(): void {
@@ -58,6 +80,7 @@ export const useGameStore = defineStore('game', () => {
     operateStage.value = 'pass'
     operateArgs.value = []
     operateResult.value = ''
+    touchGame()
   }
 
   function confirmPassPhone(): void {
@@ -70,6 +93,7 @@ export const useGameStore = defineStore('game', () => {
       operateArgs.value,
     )
     operateStage.value = 'result'
+    touchGame()
   }
 
   function nextOperate1(): void {
@@ -77,12 +101,14 @@ export const useGameStore = defineStore('game', () => {
     operateArgs.value = []
     operateResult.value = ''
     game.value.operate1(game.value.curPosition + 1)
+    touchGame()
   }
 
   function finishOperate2(): void {
     if (!game.value.curPlayer) return
     operateResult.value = game.value.curPlayer.role.operate2(game.value.curPosition)()
     operateStage.value = 'result'
+    touchGame()
   }
 
   function nextOperate2(): void {
@@ -90,10 +116,12 @@ export const useGameStore = defineStore('game', () => {
     operateArgs.value = []
     operateResult.value = ''
     game.value.operate2(game.value.curPosition + 1)
+    touchGame()
   }
 
   function finishArgue(): void {
     killResult.value = game.value.getKillResult()(operateArgs.value)
+    touchGame()
   }
 
   function restart(): void {
@@ -105,6 +133,7 @@ export const useGameStore = defineStore('game', () => {
     const storedRoles = localStorage.getItem(STORAGE_KEYS.rolesString) || ''
     game.value = new Game(playerCount, operateTimeout)
     rolesString.value = storedRoles || game.value.defaultRoleNames.join('、')
+    syncRolesToPlayerCount()
     operateStage.value = 'pass'
     operateArgs.value = []
     operateResult.value = ''
@@ -129,6 +158,7 @@ export const useGameStore = defineStore('game', () => {
     curPlayer,
     GameStatusEnum,
     setPlayerCount,
+    setOperateTimeout,
     confirmConfig,
     confirmRule,
     confirmPassPhone,

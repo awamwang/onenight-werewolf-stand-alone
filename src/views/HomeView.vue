@@ -47,22 +47,19 @@ const playerCount = ref(store.game.playerCount)
 const operateTimeout = ref(store.game.operateTimeout)
 
 watch(operateTimeout, (v) => {
-  store.game.operateTimeout = v
+  store.setOperateTimeout(v)
 })
 
 function onPlayerCountChange(value: number | undefined) {
   if (!value) return
   store.setPlayerCount(value)
-  if (!localStorage.getItem('werewolfRolesString')) {
-    store.rolesString = store.game.defaultRoleNames.join('、')
-  }
 }
 
 function start() {
   error.value = ''
   try {
-    store.game.operateTimeout = operateTimeout.value
-    store.game.playerCount = playerCount.value
+    store.setOperateTimeout(operateTimeout.value)
+    store.setPlayerCount(playerCount.value)
     store.confirmConfig()
     router.push('/game')
   } catch (e) {
